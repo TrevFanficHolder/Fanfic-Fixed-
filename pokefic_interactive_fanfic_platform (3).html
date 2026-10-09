@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokeFic - Interactive Fanfic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --poke-red: #ef5350;
+            --poke-dark: #212121;
+            --poke-blue: #29b6f6;
+            --poke-screen: #f0f0f0;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--poke-dark);
+            background-image: radial-gradient(#333 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: #333;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+        .pokedex-shell {
+            background-color: var(--poke-red);
+            border-radius: 20px;
+            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.2), 10px 10px 30px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 900px;
+            height: 95vh;
+            max-height: 900px;
+            display: flex;
+            flex-direction: column;
+            border: 4px solid #b71c1c;
+            overflow: hidden;
+            position: relative;
+        }
+        .pokedex-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 6px solid var(--poke-dark);
+            background: linear-gradient(180deg, #ff8a80 0%, var(--poke-red) 100%);
+        }
+        .camera-lens {
+            width: 60px;
+            height: 60px;
+            background: #fff;
+            border-radius: 50%;
+            border: 4px solid var(--poke-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+        .camera-inner {
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle at 30% 30%, #81d4fa, var(--poke-blue), #01579b);
+            border-radius: 50%;
+        }
+        .status-lights {
+            display: flex;
+            gap: 8px;
+        }
+        .light {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 2px solid var(--poke-dark);
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+        .light.red { background: radial-gradient(circle at 30% 30%, #ff8a80, #d50000); }
+        .light.yellow { background: radial-gradient(circle at 30% 30%, #ffe57f, #ffd600); }
+        .light.green { background: radial-gradient(circle at 30% 30%, #b9f6ca, #00c853); }
+        
+        .pokedex-screen-container {
+            flex: 1;
+            padding: 20px;
+            background-color: var(--poke-red);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .pokedex-screen {
+            flex: 1;
+            background-color: var(--poke-screen);
+            border: 15px solid #e0e0e0;
+            border-radius: 10px;
+            border-bottom-left-radius: 40px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            position: relative;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .pokedex-screen::before {
+            content: '';
+            position: absolute;
+            top: -15px; left: -15px; right: -15px; bottom: -15px;
+            border: 2px solid var(--poke-dark);
+            border-radius: 12px;
+            border-bottom-left-radius: 42px;
+            pointer-events: none;
+        }
+        .screen-content {
+            padding: 20px;
+            flex: 1;
+        }
+        
+        /* Scrollbar styles */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #bdbdbd; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9e9e9e; }
+
+        /* UI Elements */
+        .btn-poke {
+            background-color: #ffcc00;
+            color: #333;
+            border: 2px solid var(--poke-dark);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 2px 2px 0px var(--poke-dark);
+            transition: all 0.1s;
+            cursor: pointer;
+        }
+        .btn-poke:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0px var(--poke-dark); }
+        .btn-poke:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px var(--poke-dark); }
+        .btn-poke-blue { background-color: var(--poke-blue); color: white; }
+        .btn-poke-red { background-color: var(--poke-red); color: white; }
+
+        .input-poke {
+            border: 2px solid var(--poke-dark);
+            border-radius: 6px;
+            padding: 10px;
+            font-family: 'Inter', sans-serif;
+            width: 100%;
+            background: #fff;
+        }
+        .input-poke:focus { outline: none; border-color: var(--poke-blue); box-shadow: 0 0 0 3px rgba(41, 182, 246, 0.3); }
+
+        /* Editor & Blocks */
+        .editor-block {
+            background: white;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        .editor-block-controls {
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+        .editor-btn-small {
+            background: var(--poke-dark);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Modal */
+        #custom-modal {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            border: 4px solid var(--poke-dark);
+            box-shadow: 8px 8px 0px rgba(0,0,0,0.5);
+        }
+
+        /* Chat bubbles */
+        .chat-bubble {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            position: relative;
+            clear: both;
+            border: 2px solid var(--poke-dark);
+            font-size: 14px;
+        }
+        .chat-left {
+            float: left;
+            background: white;
+            border-bottom-left-radius: 0;
+        }
+        .chat-right {
+            float: right;
+            background: #e3f2fd;
+            border-bottom-right-radius: 0;
+        }
+        .chat-speaker {
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .chat-container {
+            overflow: hidden;
+            background: #f5f5f5;
+            border: 2px solid #ccc;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="pokedex-shell">
+        <div class="pokedex-header">
+            <div class="camera-lens"><div class="camera-inner"></div></div>
+            <div class="status-lights">
+                <div class="light red"></div>
+                <div class="light yellow"></div>
+                <div class="light green"></div>
+            </div>
+            <div class="ml-auto pixel-font text-white text-xl pr-4" style="text-shadow: 2px 2px 0 #000;">POKEFIC</div>
+        </div>
+
+        <div class="pokedex-screen-container">
+            <div class="pokedex-screen" id="main-screen">
+                <div class="screen-content" id="app-content">
+                    <!-- Views will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal -->
+    <div id="custom-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="modal-content bg-white rounded-lg p-6 max-w-sm w-full relative">
+            <h3 id="modal-title" class="text-xl font-bold mb-2 pixel-font text-sm">Notice</h3>
+            <p id="modal-message" class="mb-6"></p>
+            <div class="flex justify-end gap-2" id="modal-buttons">
+                <button onclick="closeModal()" class="btn-poke">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Environment variables setup
+        let customAppId = localStorage.getItem('pokefic_custom_server_id');
+        const systemAppId = typeof __app_id !== 'undefined' ? __app_id : 'pokefic-default';
+        const appId = customAppId || systemAppId;
+        
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            // Fallback empty config to prevent crash if running locally without platform injection
+        };
+        
+        let app, db, auth;
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+        } catch(e) {
+            console.error("Firebase init error:", e);
+        }
+
+        // State Management
+        let currentUserRole = null; // 'read' or 'edit'
+        let allFics = [];
+        let currentFic = null;
+        let isSaving = false;
+        let currentView = 'login';
+        let ficsUnsubscribe = null;
+        let currentActiveFicId = null;
+
+        // Constants
+        const PIN_READ = "0116";
+        const PIN_EDIT = "1952";
+        const COLLECTION_PATH = 'fanfics';
+
+        // DOM Elements
+        const appContent = document.getElementById('app-content');
+        
+        window.showModal = function(title, message, buttons = null) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerHTML = message;
+            const btnContainer = document.getElementById('modal-buttons');
+            
+            if (buttons) {
+                btnContainer.innerHTML = '';
+                buttons.forEach(btn => {
+                    const b = document.createElement('button');
+                    b.className = `btn-poke ${btn.class || ''}`;
+                    b.innerText = btn.text;
+                    b.onclick = () => {
+                        btn.onClick();
+                        if(btn.close !== false) closeModal();
+                    };
+                    btnContainer.appendChild(b);
+                });
+            } else {
+                btnContainer.innerHTML = '<button onclick="closeModal()" class="btn-poke">OK</button>';
+            }
+            
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        window.closeModal = function() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        function loadLocalFics() {
+            const stored = localStorage.getItem(`pokefic_local_data_${appId}`);
+            if (stored) {
+                allFics = JSON.parse(stored);
+            }
+        }
+
+        function saveLocalFics() {
+            localStorage.setItem(`pokefic_local_data_${appId}`, JSON.stringify(allFics));
+        }
+
+        async function init() {
+            renderLoading("Booting Pokedex System...");
+            
+            // Check if we are missing the cloud database credentials (e.g. running from a downloaded HTML file)
+            let isOfflineMode = false;
+            if (!app || !db || !auth) {
+                isOfflineMode = true;
+                console.warn("No Cloud Database found. Running in Local Offline Mode.");
+            }
+
+            if(!isOfflineMode && auth) {
+                try {
+                    const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                    if (initialToken) {
+                        await signInWithCustomToken(auth, initialToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    startFicsListener();
+                } catch(e) {
+                    console.error("Auth error", e);
+                    isOfflineMode = true; // Fallback to local storage if network blocks us
+                }
+            }
+
+            if (isOfflineMode) {
+                window.isOfflineMode = true;
+                loadLocalFics();
+            } else {
+                window.isOfflineMode = false;
+            }
+
+            // Check session
+            const savedRole = localStorage.getItem(`pokefic_role_${appId}`);
+            if (savedRole === 'read' || savedRole === 'edit') {
+                currentUserRole = savedRole;
+                loadDashboard();
+            } else {
+                renderLogin();
+            }
+        }
+
+        function getFicsCollectionRef() {
+            // MANDATORY PATH STRUCTURE
+            return collection(db, 'artifacts', appId, 'public', 'data', COLLECTION_PATH);
+        }
+
+        function renderLoading(msg) {
+            appContent.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full">
+                    <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+                    <p class="pixel-font text-xs text-gray-500">${msg}</p>
+                </div>
+            `;
+        }
+
+        function renderLogin() {
+            appContent.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full max-w-sm mx-auto text-center">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Pok%C3%A9_Ball_icon.svg" width="60" class="mb-6 opacity-80 animate-bounce">
+                    <h1 class="pixel-font text-lg mb-2">SYSTEM LOCKED</h1>
+                    <p class="text-sm text-gray-600 mb-6">Please enter access PIN.</p>
+                    
+                    <input type="password" id="pin-input" class="input-poke text-center text-2xl tracking-widest mb-4 pixel-font" placeholder="****" maxlength="4">
+                    <button id="btn-login" class="btn-poke w-full">ACCESS</button>
+                    
+                    <div class="mt-8 text-xs text-gray-500 border-t border-gray-300 pt-4 w-full">
+                        Server ID: <span class="font-mono bg-gray-200 px-1 py-0.5 rounded cursor-pointer" onclick="changeServer()" title="Click to copy or change">${appId.length > 15 ? appId.substring(0, 15) + '...' : appId}</span>
+                        <button onclick="changeServer()" class="text-blue-500 hover:text-blue-700 underline ml-2 font-bold"><i class="fas fa-edit"></i> Change</button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('btn-login').addEventListener('click', handleLogin);
+            document.getElementById('pin-input').addEventListener('keypress', (e) => {
+                if(e.key === 'Enter') handleLogin();
+            });
+        }
+        
+        window.changeServer = function() {
+            showModal("Server Connection", `
+                <p class="mb-3 text-xs text-gray-600">If you downloaded this website, you must connect to the same <b>Server ID</b> to share fanfics with others.</p>
+                <div class="mb-2">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Current Server ID</label>
+                    <input type="text" id="server-input" class="input-poke text-sm font-mono mt-1 w-full text-center" value="${appId}" placeholder="Enter Server ID">
+                </div>
+                <p class="text-[10px] text-gray-400">Clear the input to reset to default.</p>
+            `, [
+                { text: "Cancel", onClick: () => {}, class: 'bg-gray-300 text-gray-800 border-gray-400 shadow-[2px_2px_0px_#9ca3af]' },
+                { text: "Connect", onClick: () => {
+                    const input = document.getElementById('server-input').value.trim();
+                    if (input === systemAppId || input === '') {
+                        localStorage.removeItem('pokefic_custom_server_id');
+                    } else {
+                        localStorage.setItem('pokefic_custom_server_id', input);
+                    }
+                    window.location.reload();
+                }, class: 'btn-poke-blue' }
+            ]);
+        };
+
+        function handleLogin() {
+            const pin = document.getElementById('pin-input').value;
+            if (pin === PIN_READ) {
+                currentUserRole = 'read';
+                localStorage.setItem(`pokefic_role_${appId}`, 'read');
+                loadDashboard();
+            } else if (pin === PIN_EDIT) {
+                currentUserRole = 'edit';
+                localStorage.setItem(`pokefic_role_${appId}`, 'edit');
+                loadDashboard();
+            } else {
+                showModal("Access Denied", "Incorrect PIN entered. Please try again.");
+                document.getElementById('pin-input').value = '';
+            }
+        }
+
+        function startFicsListener() {
+            if (ficsUnsubscribe) ficsUnsubscribe();
+            
+            ficsUnsubscribe = onSnapshot(getFicsCollectionRef(), (snapshot) => {
+                allFics = [];
+                snapshot.forEach((doc) => {
+                    allFics.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Re-render UI based on current view to reflect real-time changes
+                if (currentView === 'dashboard') {
+                    renderDashboard();
+                } else if (currentView === 'reader') {
+                    // Update polls seamlessly without breaking chat state
+                    updateActiveReaderLiveElements();
+                }
+            }, (error) => {
+                console.error("Real-time sync error:", error);
+            });
+        }
+
+        function loadDashboard() {
+            currentView = 'dashboard';
+            
+            // If we are online but auth failed to load in time, fall back safely instead of crashing
+            if (!window.isOfflineMode && (!auth || !auth.currentUser)) {
+                 console.warn("Network auth not ready. Falling back to offline mode.");
+                 window.isOfflineMode = true;
+                 loadLocalFics();
+            }
+            
+            renderDashboard();
+        }
+        window.loadDashboard = loadDashboard;
+
+        function renderDashboard() {
+            const modeBadge = window.isOfflineMode 
+                ? `<span class="bg-yellow-100 text-yellow-800 text-[9px] px-2 py-0.5 rounded font-bold shadow-sm"><i class="fas fa-wifi-slash"></i> OFFLINE MODE</span>`
+                : `<span class="bg-green-100 text-green-800 text-[9px] px-2 py-0.5 rounded font-bold shadow-sm"><i class="fas fa-wifi"></i> CLOUD SYNC</span>`;
+
+            let html = `
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="pixel-font text-sm text-gray-800">DATA BOX 1</h2>
+                        <p class="text-xs text-gray-500 mb-1">Access: ${currentUserRole.toUpperCase()} | Server: <span class="font-mono text-blue-500 cursor-pointer underline" onclick="changeServer()" title="Change Server ID">${appId.length > 10 ? appId.substring(0,10)+'...' : appId}</span></p>
+                        ${modeBadge}
+                    </div>
+                    <button id="btn-logout" class="btn-poke text-xs py-1 h-8"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            `;
+
+            if (currentUserRole === 'edit') {
+                html += `
+                    <button id="btn-create" class="btn-poke btn-poke-blue w-full mb-6 py-3">
+                        <i class="fas fa-plus mr-2"></i> Create New Fanfic
+                    </button>
+                `;
+            }
+
+            if (allFics.length === 0) {
+                html += `<div class="text-center p-8 border-2 border-dashed border-gray-400 rounded-xl text-gray-500">No data found in this box.</div>`;
+            } else {
+                html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+                allFics.forEach(fic => {
+                    // Only show published fics to readers
+                    if (currentUserRole === 'read' && !fic.published) return;
+
+                    html += `
+                        <div class="border-2 border-gray-300 rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition-shadow relative cursor-pointer" onclick="openReader('${fic.id}')">
+                            ${fic.published ? 
+                                '<span class="absolute top-2 right-2 bg-green-100 text-green-800 text-[10px] font-bold px-2 py-1 rounded">PUBLIC</span>' : 
+                                '<span class="absolute top-2 right-2 bg-yellow-100 text-yellow-800 text-[10px] font-bold px-2 py-1 rounded">DRAFT</span>'
+                            }
+                            <h3 class="font-bold text-lg mb-1 pr-16 truncate">${fic.title || 'Untitled'}</h3>
+                            <p class="text-xs text-gray-500 mb-3">By ${fic.author || 'Unknown'}</p>
+                            
+                            ${currentUserRole === 'edit' ? `
+                                <div class="flex gap-2 mt-2 pt-2 border-t border-gray-100" onclick="event.stopPropagation()">
+                                    <button class="text-xs btn-poke py-1 px-2 flex-1" onclick="openEditor('${fic.id}')"><i class="fas fa-edit"></i> Edit</button>
+                                    <button class="text-xs btn-poke btn-poke-red py-1 px-2" onclick="promptDelete('${fic.id}')"><i class="fas fa-trash"></i></button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            appContent.innerHTML = html;
+
+            document.getElementById('btn-logout').addEventListener('click', () => {
+                localStorage.removeItem(`pokefic_role_${appId}`);
+                currentUserRole = null;
+                renderLogin();
+            });
+
+            if (document.getElementById('btn-create')) {
+                document.getElementById('btn-create').addEventListener('click', () => openEditor());
+            }
+        }
+
+        window.openEditor = function(ficId = null) {
+            if (currentUserRole !== 'edit') return;
+            currentView = 'editor';
+            
+            if (ficId) {
+                currentFic = JSON.parse(JSON.stringify(allFics.find(f => f.id === ficId)));
+            } else {
+                currentFic = {
+                    id: crypto.randomUUID(),
+                    title: '',
+                    author: '',
+                    published: true, // Auto-publish by default so readers see it immediately
+                    blocks: []
+                };
+            }
+            renderEditor();
+        }
+
+        function renderEditor() {
+            appContent.innerHTML = `
+                <div class="flex flex-col h-full relative pb-20">
+                    <div class="flex justify-between items-center mb-4">
+                        <button class="btn-poke py-1 px-3 text-xs" onclick="loadDashboard()"><i class="fas fa-arrow-left"></i> Back</button>
+                        <span class="pixel-font text-[10px] text-gray-500">AUTHOR MODE</span>
+                    </div>
+
+                    <input type="text" id="fic-title" class="input-poke text-xl font-bold mb-2 pixel-font text-sm" placeholder="Fanfic Title" value="${currentFic.title}">
+                    <input type="text" id="fic-author" class="input-poke mb-4" placeholder="Author Name" value="${currentFic.author}">
+
+                    <div id="editor-blocks-container" class="flex-1 overflow-y-auto mb-4 border-2 border-dashed border-gray-300 rounded-lg p-2 min-h-[200px] bg-gray-50">
+                        <!-- Blocks go here -->
+                    </div>
+
+                    <!-- Toolbar fixed at bottom of screen content -->
+                    <div class="absolute bottom-0 left-0 right-0 bg-white border-2 border-gray-300 rounded-lg p-2 flex flex-wrap gap-2 shadow-lg z-10">
+                        <button class="btn-poke text-xs py-1 px-2 flex-1 min-w-[80px]" onclick="addBlock('text')"><i class="fas fa-font"></i> Text</button>
+                        <button class="btn-poke text-xs py-1 px-2 flex-1 min-w-[80px]" onclick="addBlock('image')"><i class="fas fa-image"></i> Image</button>
+                        <button class="btn-poke text-xs py-1 px-2 flex-1 min-w-[80px]" onclick="addBlock('poll')"><i class="fas fa-poll"></i> Poll</button>
+                        <button class="btn-poke text-xs py-1 px-2 flex-1 min-w-[80px]" onclick="addBlock('chat')"><i class="fas fa-comments"></i> Chat</button>
+                        <button class="btn-poke text-xs py-1 px-2 flex-1 min-w-[80px]" onclick="addBlock('team')"><i class="fas fa-users"></i> Team</button>
+                        
+                        <div class="w-full border-t border-gray-200 my-1"></div>
+                        
+                        <label class="flex items-center text-xs font-bold gap-2 cursor-pointer w-full mb-1">
+                            <input type="checkbox" id="fic-published" ${currentFic.published ? 'checked' : ''}>
+                            Publish to Readers
+                        </label>
+                        <button class="btn-poke btn-poke-blue w-full" id="btn-save" onclick="saveFic()"><i class="fas fa-save"></i> Save Fanfic</button>
+                    </div>
+                </div>
+            `;
+            rebuildEditorBlocksDOM();
+        }
+
+        function rebuildEditorBlocksDOM() {
+            const container = document.getElementById('editor-blocks-container');
+            container.innerHTML = '';
+            if (currentFic.blocks.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 text-sm mt-10">No content yet. Add blocks from the toolbar below.</div>';
+                return;
+            }
+
+            currentFic.blocks.forEach((block, index) => {
+                const el = document.createElement('div');
+                el.className = 'editor-block';
+                el.innerHTML = `
+                    <div class="editor-block-controls">
+                        <button class="editor-btn-small bg-gray-400 hover:bg-gray-600" onclick="moveBlock(${index}, -1)" title="Move Up"><i class="fas fa-arrow-up"></i></button>
+                        <button class="editor-btn-small bg-gray-400 hover:bg-gray-600" onclick="moveBlock(${index}, 1)" title="Move Down"><i class="fas fa-arrow-down"></i></button>
+                        <button class="editor-btn-small bg-red-500 hover:bg-red-600" onclick="deleteBlock(${index})" title="Delete"><i class="fas fa-times"></i></button>
+                    </div>
+                `;
+
+                // Block specific content
+                const content = document.createElement('div');
+                content.className = 'mt-2';
+                
+                if (block.type === 'text') {
+                    content.innerHTML = `<textarea class="input-poke w-full h-24" placeholder="Write your story here..." onchange="updateBlock(${index}, 'content', this.value)">${block.content || ''}</textarea>`;
+                } 
+                else if (block.type === 'image') {
+                    content.innerHTML = `
+                        <p class="text-xs font-bold mb-1"><i class="fas fa-image"></i> Image Block</p>
+                        <input type="text" class="input-poke w-full" placeholder="Image URL" value="${block.url || ''}" onchange="updateBlock(${index}, 'url', this.value)">
+                        ${block.url ? `<img src="${block.url}" class="mt-2 max-h-32 rounded border border-gray-200" onerror="this.style.display='none'">` : ''}
+                    `;
+                }
+                else if (block.type === 'poll') {
+                    content.innerHTML = `
+                        <p class="text-xs font-bold mb-1"><i class="fas fa-poll"></i> Poll Block</p>
+                        <input type="text" class="input-poke w-full mb-2 font-bold" placeholder="Poll Question" value="${block.question || ''}" onchange="updateBlock(${index}, 'question', this.value)">
+                        <div class="flex gap-2">
+                            <input type="text" class="input-poke flex-1" placeholder="Option 1" value="${block.options[0] || ''}" onchange="updatePollOption(${index}, 0, this.value)">
+                            <input type="text" class="input-poke flex-1" placeholder="Option 2" value="${block.options[1] || ''}" onchange="updatePollOption(${index}, 1, this.value)">
+                        </div>
+                    `;
+                }
+                else if (block.type === 'chat') {
+                    // Chat Builder
+                    let chatHtml = `
+                        <p class="text-xs font-bold mb-2"><i class="fas fa-comments"></i> Interactive Chat</p>
+                        <div class="flex gap-2 mb-3">
+                            <input type="text" class="input-poke flex-1 text-sm" placeholder="Character 1 Name" value="${block.char1 || ''}" onchange="updateBlock(${index}, 'char1', this.value)">
+                            <input type="text" class="input-poke flex-1 text-sm" placeholder="Character 2 Name" value="${block.char2 || ''}" onchange="updateBlock(${index}, 'char2', this.value)">
+                        </div>
+                        <div class="bg-gray-100 p-2 rounded border border-gray-300 max-h-48 overflow-y-auto mb-2 text-sm" id="chat-steps-${index}">
+                    `;
+                    
+                    block.steps.forEach((step, sIdx) => {
+                        chatHtml += `<div class="mb-2 p-2 bg-white rounded border border-gray-200 shadow-sm relative">
+                            <button class="absolute top-1 right-1 text-red-500 hover:text-red-700" onclick="removeChatStep(${index}, ${sIdx})"><i class="fas fa-times text-xs"></i></button>
+                        `;
+                        if (step.type === 'msg') {
+                            chatHtml += `
+                                <div class="text-xs text-gray-500 font-bold mb-1">Standard Message</div>
+                                <select class="input-poke py-1 px-2 mb-1" onchange="updateChatStep(${index}, ${sIdx}, 'speaker', this.value)">
+                                    <option value="1" ${step.speaker === 1 ? 'selected' : ''}>${block.char1 || 'Char 1'}</option>
+                                    <option value="2" ${step.speaker === 2 ? 'selected' : ''}>${block.char2 || 'Char 2'}</option>
+                                </select>
+                                <input type="text" class="input-poke py-1 px-2" placeholder="Message text" value="${step.text || ''}" onchange="updateChatStep(${index}, ${sIdx}, 'text', this.value)">
+                            `;
+                        } else if (step.type === 'choice') {
+                            chatHtml += `
+                                <div class="text-xs text-blue-500 font-bold mb-1">Interactive Choice (Reader decides Char 1's reply)</div>
+                                <div class="border-l-2 border-blue-400 pl-2">
+                                    <input type="text" class="input-poke py-1 px-2 mb-1" placeholder="Option A text" value="${step.opt1.text || ''}" onchange="updateChatChoice(${index}, ${sIdx}, 'opt1', 'text', this.value)">
+                                    <input type="text" class="input-poke py-1 px-2 mb-2 bg-gray-50" placeholder="Char 2's Reaction to A" value="${step.opt1.reply || ''}" onchange="updateChatChoice(${index}, ${sIdx}, 'opt1', 'reply', this.value)">
+                                    
+                                    <input type="text" class="input-poke py-1 px-2 mb-1 mt-2" placeholder="Option B text" value="${step.opt2.text || ''}" onchange="updateChatChoice(${index}, ${sIdx}, 'opt2', 'text', this.value)">
+                                    <input type="text" class="input-poke py-1 px-2 bg-gray-50" placeholder="Char 2's Reaction to B" value="${step.opt2.reply || ''}" onchange="updateChatChoice(${index}, ${sIdx}, 'opt2', 'reply', this.value)">
+                                </div>
+                            `;
+                        }
+                        chatHtml += `</div>`;
+                    });
+
+                    chatHtml += `</div>
+                        <div class="flex gap-2">
+                            <button class="btn-poke text-[10px] py-1 px-2" onclick="addChatStep(${index}, 'msg')">+ Message</button>
+                            <button class="btn-poke text-[10px] py-1 px-2" onclick="addChatStep(${index}, 'choice')">+ Choice</button>
+                        </div>
+                    `;
+                    content.innerHTML = chatHtml;
+                }
+                else if (block.type === 'team') {
+                    content.innerHTML = `
+                        <p class="text-xs font-bold mb-1"><i class="fas fa-users"></i> Pokemon Team Reveal</p>
+                        <input type="text" class="input-poke mb-2" placeholder="Trainer Name" value="${block.trainer || ''}" onchange="updateBlock(${index}, 'trainer', this.value)">
+                        <p class="text-[10px] text-gray-500 mb-1">Enter Pokemon names (e.g. pikachu, charizard). Max 6.</p>
+                        <input type="text" class="input-poke" placeholder="Pokemon 1, Pokemon 2..." value="${(block.pokemon || []).join(', ')}" onchange="updateTeam(${index}, this.value)">
+                    `;
+                }
+
+                el.appendChild(content);
+                container.appendChild(el);
+            });
+            // scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        window.addBlock = function(type) {
+            const newBlock = { type: type };
+            if (type === 'text') newBlock.content = '';
+            if (type === 'image') newBlock.url = '';
+            if (type === 'poll') {
+                newBlock.question = '';
+                newBlock.options = ['', ''];
+                newBlock.votes = [0, 0];
+            }
+            if (type === 'chat') {
+                newBlock.char1 = 'Ash';
+                newBlock.char2 = 'Gary';
+                newBlock.steps = [];
+            }
+            if (type === 'team') {
+                newBlock.trainer = 'Rival';
+                newBlock.pokemon = [];
+            }
+            currentFic.blocks.push(newBlock);
+            rebuildEditorBlocksDOM();
+        };
+
+        window.updateBlock = function(index, key, value) {
+            currentFic.blocks[index][key] = value;
+        };
+        window.updatePollOption = function(index, optIndex, value) {
+            currentFic.blocks[index].options[optIndex] = value;
+        };
+        window.updateTeam = function(index, value) {
+            currentFic.blocks[index].pokemon = value.split(',').map(s => s.trim().toLowerCase()).filter(s => s).slice(0, 6);
+        };
+        window.addChatStep = function(index, type) {
+            if (type === 'msg') {
+                currentFic.blocks[index].steps.push({ type: 'msg', speaker: 1, text: '' });
+            } else {
+                currentFic.blocks[index].steps.push({ type: 'choice', opt1: {text:'', reply:''}, opt2: {text:'', reply:''} });
+            }
+            rebuildEditorBlocksDOM();
+        };
+        window.updateChatStep = function(blockIdx, stepIdx, key, value) {
+            if(key === 'speaker') value = parseInt(value);
+            currentFic.blocks[blockIdx].steps[stepIdx][key] = value;
+        };
+        window.updateChatChoice = function(blockIdx, stepIdx, optKey, key, value) {
+            currentFic.blocks[blockIdx].steps[stepIdx][optKey][key] = value;
+        };
+        window.removeChatStep = function(blockIdx, stepIdx) {
+            currentFic.blocks[blockIdx].steps.splice(stepIdx, 1);
+            rebuildEditorBlocksDOM();
+        };
+        window.moveBlock = function(index, dir) {
+            if (index + dir < 0 || index + dir >= currentFic.blocks.length) return;
+            const temp = currentFic.blocks[index];
+            currentFic.blocks[index] = currentFic.blocks[index + dir];
+            currentFic.blocks[index + dir] = temp;
+            rebuildEditorBlocksDOM();
+        };
+        window.deleteBlock = function(index) {
+            currentFic.blocks.splice(index, 1);
+            rebuildEditorBlocksDOM();
+        };
+
+        window.saveFic = async function() {
+            if (!window.isOfflineMode && !auth?.currentUser) return;
+            if (isSaving) return;
+            
+            // Sync simple title/author from DOM
+            currentFic.title = document.getElementById('fic-title').value.trim() || 'Untitled Fic';
+            currentFic.author = document.getElementById('fic-author').value.trim() || 'Anonymous';
+            currentFic.published = document.getElementById('fic-published').checked;
+            currentFic.updatedAt = new Date().toISOString();
+
+            isSaving = true;
+            document.getElementById('btn-save').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                if (window.isOfflineMode) {
+                    // Offline Save via Local Storage
+                    const existingIdx = allFics.findIndex(f => f.id === currentFic.id);
+                    if (existingIdx >= 0) allFics[existingIdx] = currentFic;
+                    else allFics.push(currentFic);
+                    
+                    saveLocalFics();
+                    showModal("Success", "Fanfic saved locally! (Offline Mode)", [
+                        { text: "Keep Editing", onClick: () => {} },
+                        { text: "Go to Dashboard", onClick: () => loadDashboard() }
+                    ]);
+                } else {
+                    // Cloud Save via Firestore
+                    const docRef = doc(getFicsCollectionRef(), currentFic.id);
+                    await setDoc(docRef, currentFic);
+                    showModal("Success", "Fanfic saved globally to Cloud!", [
+                        { text: "Keep Editing", onClick: () => {} },
+                        { text: "Go to Dashboard", onClick: () => loadDashboard() }
+                    ]);
+                }
+            } catch (e) {
+                console.error("Save error:", e);
+                showModal("Error", "Failed to save fanfic.");
+            } finally {
+                isSaving = false;
+                if(document.getElementById('btn-save')) {
+                    document.getElementById('btn-save').innerHTML = '<i class="fas fa-save"></i> Save Fanfic';
+                }
+            }
+        };
+
+        window.promptDelete = function(id) {
+            showModal("Confirm Delete", "Are you sure you want to permanently delete this fanfic?", [
+                { text: "Cancel", onClick: () => {}, class: 'btn-poke-blue' },
+                { text: "Delete", onClick: () => executeDelete(id), class: 'btn-poke-red' }
+            ]);
+        };
+
+        async function executeDelete(id) {
+            try {
+                if (window.isOfflineMode) {
+                    allFics = allFics.filter(f => f.id !== id);
+                    saveLocalFics();
+                    renderDashboard();
+                } else {
+                    if (!auth?.currentUser) return;
+                    await deleteDoc(doc(getFicsCollectionRef(), id));
+                    // Real-time listener will auto-update the dashboard visually
+                }
+            } catch (e) {
+                console.error("Delete error:", e);
+                showModal("Error", "Failed to delete.");
+            }
+        }
+
+        window.openReader = function(ficId) {
+            const fic = allFics.find(f => f.id === ficId);
+            if (!fic) return;
+
+            currentView = 'reader';
+            currentActiveFicId = ficId;
+
+            appContent.innerHTML = `
+                <div class="flex flex-col h-full bg-white rounded-lg p-4 shadow-inner relative overflow-hidden" id="reader-container">
+                    <button class="btn-poke py-1 px-3 text-xs self-start mb-4 sticky top-0 z-10 shadow-sm" onclick="loadDashboard()"><i class="fas fa-arrow-left"></i> Back</button>
+                    
+                    <div class="text-center mb-6 pb-4 border-b-2 border-gray-200">
+                        <h1 class="pixel-font text-xl mb-2 leading-relaxed">${fic.title}</h1>
+                        <p class="text-sm text-gray-500 font-bold">By ${fic.author}</p>
+                    </div>
+
+                    <div id="reader-blocks" class="flex-1 overflow-y-auto pb-10"></div>
+                </div>
+            `;
+
+            const container = document.getElementById('reader-blocks');
+            
+            fic.blocks.forEach((block, index) => {
+                const el = document.createElement('div');
+                el.className = 'mb-6';
+                
+                if (block.type === 'text') {
+                    // Simple formatting for line breaks
+                    const formatted = (block.content || '').replace(/\n/g, '<br>');
+                    el.innerHTML = `<p class="leading-relaxed text-gray-800 text-lg md:text-base">${formatted}</p>`;
+                }
+                else if (block.type === 'image') {
+                    if(block.url) {
+                        el.innerHTML = `<img src="${block.url}" class="rounded-lg shadow-md max-w-full h-auto mx-auto" alt="Fanfic image">`;
+                    }
+                }
+                else if (block.type === 'poll') {
+                    const totalVotes = (block.votes[0] || 0) + (block.votes[1] || 0);
+                    const v1 = block.votes[0] || 0;
+                    const v2 = block.votes[1] || 0;
+                    
+                    const p1 = totalVotes === 0 ? 0 : Math.round((v1/totalVotes)*100);
+                    const p2 = totalVotes === 0 ? 0 : Math.round((v2/totalVotes)*100);
+
+                    // Local storage check for voting
+                    const hasVoted = localStorage.getItem(`voted_${ficId}_${index}`);
+
+                    let pollHtml = `
+                        <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 shadow-sm">
+                            <h4 class="font-bold text-center mb-4"><i class="fas fa-poll text-blue-500 mr-2"></i>${block.question}</h4>
+                            <div id="poll-content-${index}">
+                    `;
+
+                    if (hasVoted) {
+                        pollHtml += `
+                            <div class="mb-2 relative h-10 bg-gray-200 rounded overflow-hidden flex items-center justify-between px-3">
+                                <div class="absolute left-0 top-0 bottom-0 bg-blue-300 z-0" style="width: ${p1}%"></div>
+                                <span class="relative z-10 font-bold text-sm">${block.options[0]}</span>
+                                <span class="relative z-10 text-xs font-bold">${p1}% (${v1})</span>
+                            </div>
+                            <div class="relative h-10 bg-gray-200 rounded overflow-hidden flex items-center justify-between px-3">
+                                <div class="absolute left-0 top-0 bottom-0 bg-red-300 z-0" style="width: ${p2}%"></div>
+                                <span class="relative z-10 font-bold text-sm">${block.options[1]}</span>
+                                <span class="relative z-10 text-xs font-bold">${p2}% (${v2})</span>
+                            </div>
+                            <p class="text-center text-[10px] text-gray-500 mt-2">Total votes: ${totalVotes}</p>
+                        `;
+                    } else {
+                        pollHtml += `
+                            <button class="w-full btn-poke btn-poke-blue mb-2 text-sm py-2" onclick="submitVote('${ficId}', ${index}, 0)">${block.options[0]}</button>
+                            <button class="w-full btn-poke btn-poke-red text-sm py-2" onclick="submitVote('${ficId}', ${index}, 1)">${block.options[1]}</button>
+                        `;
+                    }
+                    pollHtml += `</div></div>`;
+                    el.innerHTML = pollHtml;
+                }
+                else if (block.type === 'chat') {
+                    // Chat requires a state engine
+                    el.innerHTML = `<div id="chat-engine-${index}" class="chat-container"></div>`;
+                    setTimeout(() => initChatEngine(ficId, index, block), 0);
+                }
+                else if (block.type === 'team') {
+                    el.innerHTML = `
+                        <div class="bg-gray-800 text-white p-4 rounded-xl shadow-md border-4 border-gray-900 text-center">
+                            <h4 class="pixel-font text-xs text-yellow-400 mb-4">${block.trainer.toUpperCase()}'S TEAM</h4>
+                            <div class="flex justify-center flex-wrap gap-2" id="team-${index}">
+                                ${block.pokemon.map(p => `
+                                    <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center animate-pulse" id="poke-${index}-${p}">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    // Fetch sprites asynchronously
+                    setTimeout(() => fetchPokemonSprites(index, block.pokemon), 0);
+                }
+
+                container.appendChild(el);
+            });
+        };
+
+        window.submitVote = async function(ficId, blockIndex, optionIndex) {
+            const fic = allFics.find(f => f.id === ficId);
+            if (!fic) return;
+
+            // Optimistic update in memory
+            if (!fic.blocks[blockIndex].votes) fic.blocks[blockIndex].votes = [0, 0];
+            fic.blocks[blockIndex].votes[optionIndex]++;
+
+            // Set local storage flag to prevent double-voting
+            localStorage.setItem(`voted_${ficId}_${blockIndex}`, 'true');
+
+            // Update UI seamlessly immediately
+            updateActiveReaderLiveElements();
+
+            // Save to database or local storage based on active mode
+            try {
+                if (window.isOfflineMode) {
+                    saveLocalFics();
+                } else {
+                    if (!auth?.currentUser) return;
+                    const docRef = doc(getFicsCollectionRef(), ficId);
+                    await updateDoc(docRef, {
+                        blocks: fic.blocks
+                    });
+                }
+            } catch(e) {
+                console.error("Vote failed to sync", e);
+            }
+        };
+
+        function updateActiveReaderLiveElements() {
+            if (currentView !== 'reader' || !currentActiveFicId) return;
+            const fic = allFics.find(f => f.id === currentActiveFicId);
+            if (!fic) return; // Fic might have been deleted
+
+            // Update polls seamlessly
+            fic.blocks.forEach((block, index) => {
+                if (block.type === 'poll') {
+                    const pollContainer = document.getElementById(`poll-content-${index}`);
+                    if (pollContainer) {
+                        const totalVotes = (block.votes[0] || 0) + (block.votes[1] || 0);
+                        const v1 = block.votes[0] || 0;
+                        const v2 = block.votes[1] || 0;
+                        const p1 = totalVotes === 0 ? 0 : Math.round((v1/totalVotes)*100);
+                        const p2 = totalVotes === 0 ? 0 : Math.round((v2/totalVotes)*100);
+                        
+                        const hasVoted = localStorage.getItem(`voted_${currentActiveFicId}_${index}`);
+                        
+                        if (hasVoted) {
+                            pollContainer.innerHTML = `
+                                <div class="mb-2 relative h-10 bg-gray-200 rounded overflow-hidden flex items-center justify-between px-3">
+                                    <div class="absolute left-0 top-0 bottom-0 bg-blue-300 z-0 transition-all duration-500" style="width: ${p1}%"></div>
+                                    <span class="relative z-10 font-bold text-sm">${block.options[0]}</span>
+                                    <span class="relative z-10 text-xs font-bold">${p1}% (${v1})</span>
+                                </div>
+                                <div class="relative h-10 bg-gray-200 rounded overflow-hidden flex items-center justify-between px-3">
+                                    <div class="absolute left-0 top-0 bottom-0 bg-red-300 z-0 transition-all duration-500" style="width: ${p2}%"></div>
+                                    <span class="relative z-10 font-bold text-sm">${block.options[1]}</span>
+                                    <span class="relative z-10 text-xs font-bold">${p2}% (${v2})</span>
+                                </div>
+                                <p class="text-center text-[10px] text-gray-500 mt-2">Total votes: ${totalVotes}</p>
+                            `;
+                        }
+                    }
+                }
+            });
+        }
+
+        async function fetchPokemonSprites(blockIndex, pokemonList) {
+            for (const p of pokemonList) {
+                const el = document.getElementById(`poke-${blockIndex}-${p}`);
+                if (!el) continue;
+                try {
+                    const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${p.toLowerCase()}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        const sprite = data.sprites.front_default;
+                        el.classList.remove('animate-pulse', 'bg-white/20');
+                        el.classList.add('bg-white');
+                        el.innerHTML = `<img src="${sprite}" class="w-full h-full object-contain" alt="${p}">`;
+                    } else {
+                        el.innerHTML = `<i class="fas fa-question text-gray-400"></i>`;
+                    }
+                } catch(e) {
+                    el.innerHTML = `<i class="fas fa-times text-red-500"></i>`;
+                }
+            }
+        }
+
+        function initChatEngine(ficId, blockIndex, blockData) {
+            const container = document.getElementById(`chat-engine-${blockIndex}`);
+            if (!container) return;
+
+            let currentStep = 0;
+            const history = []; // stores HTML strings of previous messages
+
+            function renderStep() {
+                container.innerHTML = '';
+                
+                // Render history
+                history.forEach(html => {
+                    const div = document.createElement('div');
+                    div.innerHTML = html;
+                    container.appendChild(div);
+                });
+
+                if (currentStep >= blockData.steps.length) {
+                    const endMsg = document.createElement('div');
+                    endMsg.className = 'text-center text-xs text-gray-400 mt-4 italic';
+                    endMsg.innerText = "--- End of Conversation ---";
+                    container.appendChild(endMsg);
+                    return;
+                }
+
+                const step = blockData.steps[currentStep];
+                
+                if (step.type === 'msg') {
+                    const isChar1 = step.speaker === 1;
+                    const speakerName = isChar1 ? blockData.char1 : blockData.char2;
+                    const bubbleClass = isChar1 ? 'chat-left' : 'chat-right';
+                    
+                    const msgHtml = `
+                        <div class="chat-bubble ${bubbleClass}">
+                            <div class="chat-speaker">${speakerName}</div>
+                            ${step.text}
+                        </div>
+                    `;
+                    history.push(msgHtml);
+                    currentStep++;
+                    
+                    // Auto-advance if it's a message, just recursively call renderStep
+                    // Adding a small delay for reading effect
+                    const loadingId = `typing-${Date.now()}`;
+                    if (currentStep < blockData.steps.length && blockData.steps[currentStep].type !== 'choice') {
+                         container.innerHTML += `<div id="${loadingId}" class="chat-bubble ${blockData.steps[currentStep].speaker === 1 ? 'chat-left' : 'chat-right'} text-gray-400 text-xs italic">typing...</div>`;
+                         setTimeout(() => {
+                             renderStep();
+                         }, 800);
+                    } else {
+                         setTimeout(renderStep, 100);
+                    }
+                } 
+                else if (step.type === 'choice') {
+                    // Present choices to reader
+                    const choiceContainer = document.createElement('div');
+                    choiceContainer.className = 'clear-both pt-2 pb-2 flex flex-col gap-2 mt-4 border-t border-gray-300';
+                    choiceContainer.innerHTML = `<div class="text-center text-xs font-bold text-gray-500 mb-1">CHOOSE YOUR REPLY (${blockData.char1})</div>`;
+                    
+                    const btn1 = document.createElement('button');
+                    btn1.className = 'btn-poke btn-poke-blue text-sm py-2';
+                    btn1.innerText = step.opt1.text;
+                    btn1.onclick = () => handleChoiceSelect(step.opt1.text, step.opt1.reply);
+
+                    const btn2 = document.createElement('button');
+                    btn2.className = 'btn-poke btn-poke-red text-sm py-2';
+                    btn2.innerText = step.opt2.text;
+                    btn2.onclick = () => handleChoiceSelect(step.opt2.text, step.opt2.reply);
+
+                    choiceContainer.appendChild(btn1);
+                    choiceContainer.appendChild(btn2);
+                    container.appendChild(choiceContainer);
+                }
+
+                // Scroll to bottom
+                container.scrollTop = container.scrollHeight;
+            }
+
+            function handleChoiceSelect(playerText, npcReply) {
+                // Add Player text (Char 1)
+                history.push(`
+                    <div class="chat-bubble chat-left border-blue-400 border-2">
+                        <div class="chat-speaker">${blockData.char1}</div>
+                        ${playerText}
+                    </div>
+                `);
+
+                // Add NPC reply (Char 2)
+                if (npcReply) {
+                    history.push(`
+                        <div class="chat-bubble chat-right">
+                            <div class="chat-speaker">${blockData.char2}</div>
+                            ${npcReply}
+                        </div>
+                    `);
+                }
+                currentStep++;
+                renderStep();
+            }
+
+            // Start the engine
+            renderStep();
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
